@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		DC9113F12A49790E00C59899 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DC9113F02A49790E00C59899 /* main.cpp */; };
+		DC9113F92A497BDF00C59899 /* CacheHashTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DC9113F72A497BDF00C59899 /* CacheHashTable.cpp */; };
+		DC9882C02A4C1531000D0438 /* CacheLRU.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DC9882BE2A4C1531000D0438 /* CacheLRU.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +27,11 @@
 /* Begin PBXFileReference section */
 		DC9113ED2A49790E00C59899 /* CacheHashTable */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CacheHashTable; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC9113F02A49790E00C59899 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		DC9113F72A497BDF00C59899 /* CacheHashTable.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CacheHashTable.cpp; sourceTree = "<group>"; };
+		DC9113F82A497BDF00C59899 /* CacheHashTable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CacheHashTable.hpp; sourceTree = "<group>"; };
+		DC9882BE2A4C1531000D0438 /* CacheLRU.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CacheLRU.cpp; sourceTree = "<group>"; };
+		DC9882BF2A4C1531000D0438 /* CacheLRU.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CacheLRU.hpp; sourceTree = "<group>"; };
+		DC9882C22A4C16A5000D0438 /* CacheBase.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CacheBase.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +65,11 @@
 			isa = PBXGroup;
 			children = (
 				DC9113F02A49790E00C59899 /* main.cpp */,
+				DC9113F72A497BDF00C59899 /* CacheHashTable.cpp */,
+				DC9113F82A497BDF00C59899 /* CacheHashTable.hpp */,
+				DC9882BE2A4C1531000D0438 /* CacheLRU.cpp */,
+				DC9882BF2A4C1531000D0438 /* CacheLRU.hpp */,
+				DC9882C22A4C16A5000D0438 /* CacheBase.hpp */,
 			);
 			path = CacheHashTable;
 			sourceTree = "<group>";
@@ -120,6 +132,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				DC9113F12A49790E00C59899 /* main.cpp in Sources */,
+				DC9113F92A497BDF00C59899 /* CacheHashTable.cpp in Sources */,
+				DC9882C02A4C1531000D0438 /* CacheLRU.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
