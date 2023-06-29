@@ -65,9 +65,9 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
-    if (key == "langenglish")
+    if (t_search == 1932907)
     {
-        std::cout << t_search << std::endl;
+        std::cout << "ERROR" << std::endl;
     }
     
     Range range;
