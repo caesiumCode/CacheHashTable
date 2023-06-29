@@ -12,8 +12,6 @@ CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
     
     t_hit    = 0;
     t_search = 0;
-    
-    std::cout << "CONSTRUCTOR\n";
 }
 
 
@@ -65,22 +63,25 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
-    if (t_search == 1932907)
-    {
-        std::cout << "ERROR" << std::endl;
-    }
+    if (t_search == 1932907) std::cout << "ERROR" << std::endl;
     
     Range range;
     bool found = find_loc(key, range);
     std::size_t span = range.upper - range.lower;
     
+    if (t_search == 1932907) std::cout << "CP 1" << std::endl;
+    
     std::size_t key_hash = m_hash_fun(key) & SLOT_MASK;
     std::size_t start    = key_hash * LENGTH;
     std::size_t end      = found ? range.upper : start + LENGTH;
     
+    if (t_search == 1932907) std::cout << "CP 2" << std::endl;
+    
     // Shift everything in the slot
     std::size_t new_span = (key.size()/256 + 1) + key.size() + (value.size()/256 + 1) + value.size();
     std::size_t i;
+    
+    if (t_search == 1932907) std::cout << "CP 3" << std::endl;
     
     if (found)
     {
@@ -88,22 +89,30 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
         
         if (new_span > span)
         {
+            if (t_search == 1932907) std::cout << "CP 4.1" << std::endl;
+            
             std::size_t offset = new_span - span;
             for (i = start + LENGTH - 1; i >= start + offset; i--) m_table[i] = m_table[i - offset];
         }
         else if (new_span < span)
         {
+            if (t_search == 1932907) std::cout << "CP 4.2" << std::endl;
             std::size_t offset = span - new_span;
             for (i = start; i < start + LENGTH - offset; i++) m_table[i] = m_table[i + offset];
         }
+        
+        if (t_search == 1932907) std::cout << "CP 5" << std::endl;
     }
     else for (i = end-1; i >= start + new_span; i--) m_table[i] = m_table[i - new_span];
     
+    if (t_search == 1932907) std::cout << "CP 6" << std::endl;
     
     // Insert at the beginning of the slot
     i = start;
     write_string(i, key);
     write_string(i, value);
+    
+    if (t_search == 1932907) std::cout << "CP 7" << std::endl;
     
     // Update trackers
     t_search++;
