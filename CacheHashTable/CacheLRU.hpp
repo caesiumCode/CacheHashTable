@@ -14,6 +14,7 @@ class CacheLRU : public CacheBase
 public:
     CacheLRU(uint32_t capacity);
     
+    void display();
     void display_trackers(double time);
     
     void insert(const std::string& key, const std::string& value);

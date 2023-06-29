@@ -38,7 +38,7 @@ void CacheHashTable::display()
                 std::cout << std::setw(4) << reinterpret_cast<char&>(m_table[i]);
                 d--;
             }
-            else         std::cout << std::setw(4) << int(m_table[i]);
+            else std::cout << std::setw(4) << int(m_table[i]);
             
             if (!is_char) d += m_table[i];
             if (m_table[i] < 255) is_char = true;

@@ -10,6 +10,11 @@ CacheLRU::CacheLRU(uint32_t capacity)
     t_hit = 0;
 }
 
+void CacheLRU::display()
+{
+    
+}
+
 void CacheLRU::display_trackers(double time)
 {
     uint64_t total_size = 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_queue.size() * 8 * 4 + get_content_size();

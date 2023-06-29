@@ -51,7 +51,11 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     TimerMeasure START = Timer::now();
     while (std::fgets(line_buffer, sizeof(line_buffer), fp))
     {
-        if (counter >= 1932906) std::cout << counter << "HELLO\n";
+        if (counter >= 1932906)
+        {
+            std::cout << counter << "HELLO\n";
+            cache.display();
+        }
         
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
@@ -60,7 +64,11 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
         
         counter++;
         
-        if (counter >= 1932906) std::cout << counter << "HELLO\n";
+        if (counter >= 1932906)
+        {
+            std::cout << counter << "HELLO\n";
+            cache.display();
+        }
     }
     TimerMeasure END = Timer::now();
         
