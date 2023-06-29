@@ -63,6 +63,8 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
+    bool flag = (t_search == 1932907);
+    
     Range range;
     bool found = find_loc(key, range);
     std::size_t span = range.upper - range.lower;
@@ -97,16 +99,16 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     write_string(i, key);
     write_string(i, value);
     
-    if (t_search == 1932907) std::cout << "CP 1" << std::endl;
+    if (flag) std::cout << "CP 1" << std::endl;
     
     // Update trackers
     t_search++;
     
-    if (t_search == 1932907) std::cout << "CP 2" << std::endl;
+    if (flag) std::cout << "CP 2" << std::endl;
     
     t_hit += found;
     
-    if (t_search == 1932907) std::cout << "CP 3" << std::endl;
+    if (flag) std::cout << "CP 3" << std::endl;
 }
 
 
