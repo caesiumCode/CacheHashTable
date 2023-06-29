@@ -51,11 +51,11 @@ void CacheHashTable::display()
 
 void CacheHashTable::display_trackers(double time)
 {
-    std::cout << "fht,";                                   // model
-    std::cout << SLOTS << "x" << LENGTH << ",";            // model parameter
-    std::cout << (double) time/t_search*1000000000 << ","; // latency (ns)
-    std::cout << (double) t_hit/t_search*100    << ",";    // hitrate (%)
-    std::cout << (double) SIZE;                            // size (B)
+    std::cout << "fht,";                                // model
+    std::cout << SLOTS << "x" << LENGTH << ",";         // model parameter
+    std::cout << (double) time/t_search << ",";         // latency (ns)
+    std::cout << (double) t_hit/t_search*100 << ",";    // hitrate (%)
+    std::cout << (double) SIZE;                         // size (B)
     std::cout << std::endl;
 }
 
@@ -63,44 +63,37 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
-    Range range;
-    bool found = find_loc(key, range);
-    std::size_t span = range.upper - range.lower;
-    
-    std::size_t key_hash = m_hash_fun(key) & SLOT_MASK;
-    std::size_t start    = key_hash * LENGTH;
-    std::size_t end      = found ? range.upper : start + LENGTH;
-    
-    // Shift everything in the slot
-    std::size_t new_span = (key.size()/256 + 1) + key.size() + (value.size()/256 + 1) + value.size();
-    std::size_t i;
-    
-    if (found)
-    {
-        for (i = end-1; i >= start + span; i--) m_table[i] = m_table[i - span];
-        
-        if (new_span > span)
-        {
-            std::size_t offset = new_span - span;
-            for (i = start + LENGTH - 1; i >= start + offset; i--) m_table[i] = m_table[i - offset];
-        }
-        else if (new_span < span)
-        {
-            std::size_t offset = span - new_span;
-            for (i = start; i < start + LENGTH - offset; i++) m_table[i] = m_table[i + offset];
-        }
-    }
-    else for (i = end-1; i >= start + new_span; i--) m_table[i] = m_table[i - new_span];
-    
-    
-    // Insert at the beginning of the slot
-    i = start;
-    write_string(i, key, start + LENGTH);
-    write_string(i, value, start + LENGTH);
-    
     // Update trackers
     t_search++;
-    t_hit += found;
+    
+    // Check plausibilty
+    std::size_t new_span = ((key.size() >> 8) + 1) + key.size() + ((value.size() >> 8) + 1) + value.size();
+    
+    if (new_span <= LENGTH)
+    {
+        KEY_HASH    = m_hash_fun(key) & SLOT_MASK;
+        START       = KEY_HASH * LENGTH;
+        END         = START + LENGTH;
+        
+        Range range;
+        bool found = find_loc(key, range);
+        std::size_t span = found * (range.upper - range.lower);
+        
+        // Shift everything in the slot
+        std::size_t end = found ? range.upper : END;
+        
+        std::shift_right(m_table + START, m_table + end, span);
+        if      (new_span > span) std::shift_right(m_table + START, m_table + END, new_span - span);
+        else if (new_span < span) std::shift_left(m_table + START, m_table + END, span - new_span);
+        
+        // Insert at the beginning of the slot
+        std::size_t i = START;
+        write_string(i, key);
+        write_string(i, value);
+        
+        // Update trackers
+        t_hit += found;
+    }
 }
 
 
@@ -136,17 +129,14 @@ bool CacheHashTable::find(const std::string &key, std::string &value)
 
 bool CacheHashTable::find_loc(const std::string &key, Range& range)
 {
-    std::size_t key_hash = m_hash_fun(key) & SLOT_MASK;
-    std::size_t start    = key_hash * LENGTH;
-    std::size_t end      = start + LENGTH;
-    std::size_t i        = start;
-    std::size_t i_prev   = i;
+    std::size_t i       = START;
+    std::size_t i_prev  = i;
     
     bool match = false;
-    while (i < end && !match)
+    while (i < END && !match)
     {
         i_prev = i;
-        match = compare_string(i, key, end);
+        match = compare_string(i, key);
     }
     
     if (match)
@@ -159,91 +149,73 @@ bool CacheHashTable::find_loc(const std::string &key, Range& range)
 }
 
 
-bool CacheHashTable::compare_string(std::size_t& i, const std::string &key, const std::size_t LIMIT)
+bool CacheHashTable::compare_string(std::size_t& i, const std::string &key)
 {
     // 3 D O T 4 D A T A 4 M A N Y ...
     // ^
     
     // - - - - - MATCH KEY - - - - -
     // Read length
-    std::size_t len = read_length(i, LIMIT);
+    std::size_t len = read_length(i);
     
     // 3 D O T 4 D A T A 4 M A N Y ...
     //   ^
     
-    if (len != key.size() || i + len >= LIMIT)
+    // Read string
+    if (!std::equal(m_table + i, m_table + i + len, reinterpret_cast<const uint8_t*>(key.data()), reinterpret_cast<const uint8_t*>(key.data() + key.size())))
     {
         // Cannot match so pass data
         i += len;
-        pass_string(i, LIMIT);
+        pass_string(i);
         return false;
     }
     
-    // Read string
-    std::size_t j = 0;
-    while (j < len && m_table[i] == reinterpret_cast<const uint8_t&>(key[j]))
-    {
-        i++;
-        j++;
-    }
+    i += len;
     
     // 3 D O T 4 D A T A 4 M A N Y ...
     //         ^
     
-    if (j < len)
-    {
-        // Don't match so pass data
-        i += (len - j);
-        pass_string(i, LIMIT);
-        return false;
-    }
-    
     // - - - - - PASS DATA - - - - -
-    pass_string(i, LIMIT);
+    pass_string(i);
     
     // 3 D O T 4 D A T A 4 M A N Y ...
     //                   ^
     
-    if (i >= LIMIT) return false;
+    if (i >= END) return false;
     
     return true;
 }
 
 
-void CacheHashTable::pass_string(std::size_t &i, const std::size_t LIMIT)
+void CacheHashTable::pass_string(std::size_t &i)
 {
-    i += read_length(i, LIMIT);
+    i += read_length(i);
 }
 
 
 
-std::size_t CacheHashTable::read_length(std::size_t &i, const std::size_t LIMIT)
+std::size_t CacheHashTable::read_length(std::size_t &i)
 {
     std::size_t len = m_table[i];
-    while (m_table[i] == 255 && i < LIMIT-1)
-    {
-        i++;
-        len += m_table[i];
-    }
-    i++;
+    while (m_table[i] == 255 && i < END-1) len += m_table[++i];
+    ++i;
     
     return len;
 }
 
 
 
-void CacheHashTable::write_length(std::size_t &i, std::size_t length, const std::size_t LIMIT)
+void CacheHashTable::write_length(std::size_t &i, std::size_t length)
 {
-    while (length > 0 && i < LIMIT)
+    while (length > 0 && i < END)
     {
         if (length >= 256) m_table[i] = 255;
         else               m_table[i] = length;
         
-        length -= m_table[i];
-        i++;
+        length -= m_table[i++];
     }
     
-    if (m_table[i-1] == 255 && i < LIMIT)
+    if (m_table[i-1] == 255 && i < END)
     {
         m_table[i] = 0;
         i++;
@@ -252,15 +224,12 @@ void CacheHashTable::write_length(std::size_t &i, std::size_t length, const std:
 
 
 
-void CacheHashTable::write_string(std::size_t &i, const std::string &str, const std::size_t LIMIT)
+void CacheHashTable::write_string(std::size_t &i, const std::string &str)
 {
-    write_length(i, str.size());
+    std::size_t s = str.size();
     
-    std::size_t j = 0;
-    while (j < str.size() && i < LIMIT)
-    {
-        m_table[i] = reinterpret_cast<const uint16_t&>(str[j]);
-        i++;
-        j++;
-    }    
+    write_length(i, s);
+    std::copy(reinterpret_cast<const uint8_t*>(str.data()), reinterpret_cast<const uint8_t*>(str.data() + s), m_table+i);
+    
+    i += s;
 }

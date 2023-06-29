@@ -60,7 +60,7 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     std::fclose(fp);
     
     std::cout << filename << ",";
-    cache.display_trackers(std::chrono::duration<double>(END - START).count() - estimate_reading_time(path, filename));
+    cache.display_trackers(std::chrono::duration<double, std::nano>(END - START).count() - estimate_reading_time(path, filename));
 }
 
 double estimate_reading_time(const std::string& path, const std::string& filename)
@@ -77,5 +77,5 @@ double estimate_reading_time(const std::string& path, const std::string& filenam
     }
     TimerMeasure END = Timer::now();
     
-    return std::chrono::duration<double>(END - START).count();
+    return std::chrono::duration<double, std::nano>(END - START).count();
 }
