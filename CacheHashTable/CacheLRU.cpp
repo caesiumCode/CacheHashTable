@@ -12,7 +12,7 @@ CacheLRU::CacheLRU(uint32_t capacity)
 
 void CacheLRU::display_trackers(double time)
 {
-    uint64_t total_size = 8 * (int)m_map.bucket_count() + (8 + 8) * m_map.size() + CAPACITY * 8 * 4 + get_content_size();
+    uint64_t total_size = 8 * (int)m_map.bucket_count() + (8 + 8) * m_map.size() + m_queue.size() * 8 * 4 + get_content_size();
     
     std::cout << "lru,";                                // model
     std::cout << CAPACITY << ",";                       // model parameter
