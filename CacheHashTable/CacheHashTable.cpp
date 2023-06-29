@@ -11,7 +11,7 @@ CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
     
     t_hit    = 0;
-    t_search = 0;
+    t_search = 0;    
 }
 
 
@@ -63,21 +63,18 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
-    bool flag = (t_search >= 1932907);
-    if (flag) std::cout << t_search << std::endl;
-    
     Range range;
     bool found = find_loc(key, range);
     std::size_t span = range.upper - range.lower;
-        
+    
     std::size_t key_hash = m_hash_fun(key) & SLOT_MASK;
     std::size_t start    = key_hash * LENGTH;
     std::size_t end      = found ? range.upper : start + LENGTH;
-        
+    
     // Shift everything in the slot
     std::size_t new_span = (key.size()/256 + 1) + key.size() + (value.size()/256 + 1) + value.size();
     std::size_t i;
-        
+    
     if (found)
     {
         for (i = end-1; i >= start + span; i--) m_table[i] = m_table[i - span];
@@ -95,21 +92,15 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     }
     else for (i = end-1; i >= start + new_span; i--) m_table[i] = m_table[i - new_span];
     
+    
     // Insert at the beginning of the slot
     i = start;
     write_string(i, key);
     write_string(i, value);
     
-    if (flag) std::cout << "CP 1" << std::endl;
-    
     // Update trackers
     t_search++;
-    
-    if (flag) std::cout << "CP 2" << std::endl;
-    
     t_hit += found;
-    
-    if (flag) std::cout << "CP 3" << std::endl;
 }
 
 
