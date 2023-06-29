@@ -8,6 +8,7 @@
 using Timer         = std::chrono::high_resolution_clock;
 using TimerMeasure  = std::chrono::time_point<Timer>;
 
+double estimate_reading_time(const std::string& path, const std::string& filename);
 void test_model(CacheBase& cache, const std::string& path, const std::string& filename);
 
 /*
@@ -51,7 +52,7 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     {
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
-                
+        
         cache.insert(key, key);
     }
     TimerMeasure END = Timer::now();
@@ -59,5 +60,22 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     std::fclose(fp);
     
     std::cout << filename << ",";
-    cache.display_trackers(std::chrono::duration<double>(END - START).count());
+    cache.display_trackers(std::chrono::duration<double>(END - START).count() - estimate_reading_time(path, filename));
+}
+
+double estimate_reading_time(const std::string& path, const std::string& filename)
+{
+    const int   LINE_BUFFER_SIZE = 1 << 10;
+    char        line_buffer[LINE_BUFFER_SIZE];
+    std::FILE* fp = std::fopen((path + filename).c_str(), "r");
+        
+    TimerMeasure START = Timer::now();
+    while (std::fgets(line_buffer, sizeof(line_buffer), fp))
+    {
+        std::string key(line_buffer);
+        if (key.back() == '\n') key.pop_back();
+    }
+    TimerMeasure END = Timer::now();
+    
+    return std::chrono::duration<double>(END - START).count();
 }

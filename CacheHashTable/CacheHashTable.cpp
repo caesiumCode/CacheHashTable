@@ -51,11 +51,11 @@ void CacheHashTable::display()
 
 void CacheHashTable::display_trackers(double time)
 {
-    std::cout << "fht,";                                // model
-    std::cout << SLOTS << "x" << LENGTH << ",";         // model parameter
-    std::cout << (double) time/t_search*1000000 << ","; // latency (μs)
-    std::cout << (double) t_hit/t_search*100    << ","; // hitrate (%)
-    std::cout << (double) SIZE;                         // size (B)
+    std::cout << "fht,";                                   // model
+    std::cout << SLOTS << "x" << LENGTH << ",";            // model parameter
+    std::cout << (double) time/t_search*1000000000 << ","; // latency (ns)
+    std::cout << (double) t_hit/t_search*100    << ",";    // hitrate (%)
+    std::cout << (double) SIZE;                            // size (B)
     std::cout << std::endl;
 }
 
