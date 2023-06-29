@@ -143,9 +143,8 @@ bool CacheHashTable::find_loc(const std::string &key, Range& range)
     {
         range.lower = i_prev;
         range.upper = i;
-        return true;
     }
-    else return false;
+    return match;
 }
 
 
@@ -162,7 +161,8 @@ bool CacheHashTable::compare_string(std::size_t& i, const std::string &key)
     //   ^
     
     // Read string
-    if (!std::equal(m_table + i, m_table + i + len, reinterpret_cast<const uint8_t*>(key.data()), reinterpret_cast<const uint8_t*>(key.data() + key.size())))
+    const uint8_t* key_translation = reinterpret_cast<const uint8_t*>(key.data());
+    if (!std::equal(m_table + i, m_table + i + len, key_translation, key_translation + key.size()))
     {
         // Cannot match so pass data
         i += len;
@@ -181,9 +181,7 @@ bool CacheHashTable::compare_string(std::size_t& i, const std::string &key)
     // 3 D O T 4 D A T A 4 M A N Y ...
     //                   ^
     
-    if (i >= END) return false;
-    
-    return true;
+    return i < END;
 }
 
 
