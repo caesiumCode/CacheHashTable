@@ -67,7 +67,7 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
     if (key == "langenglish")
     {
-        std::cout << key << std::endl;
+        std::cout << t_search << std::endl;
     }
     
     Range range;
