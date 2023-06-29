@@ -49,8 +49,8 @@ private:
     void        pass_string(std::size_t& i, const std::size_t LIMIT = std::string::npos);
     
     std::size_t read_length(std::size_t& i, const std::size_t LIMIT = std::string::npos);
-    void        write_length(std::size_t& i, std::size_t length, const std::size_t LIMIT = std::string::npos);
-    void        write_string(std::size_t& i, const std::string& str, const std::size_t LIMIT = std::string::npos);
+    void        write_length(std::size_t& i, std::size_t length);
+    void        write_string(std::size_t& i, const std::string& str);
 };
 
 #endif /* CacheHashTable_hpp */

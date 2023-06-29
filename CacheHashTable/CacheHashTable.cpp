@@ -63,6 +63,11 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
+    // Abort if cannot fit inside a slot
+    std::size_t new_span = (key.size()/256 + 1) + key.size() + (value.size()/256 + 1) + value.size();
+    if (new_span > LENGTH) return;
+    
+    // Locate key
     Range range;
     bool found = find_loc(key, range);
     std::size_t span = range.upper - range.lower;
@@ -72,9 +77,7 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     std::size_t end      = found ? range.upper : start + LENGTH;
     
     // Shift everything in the slot
-    std::size_t new_span = (key.size()/256 + 1) + key.size() + (value.size()/256 + 1) + value.size();
     std::size_t i;
-    
     if (found)
     {
         for (i = end-1; i >= start + span; i--) m_table[i] = m_table[i - span];
@@ -95,8 +98,8 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     
     // Insert at the beginning of the slot
     i = start;
-    write_string(i, key, start + LENGTH);
-    write_string(i, value, start + LENGTH);
+    write_string(i, key);
+    write_string(i, value);
     
     // Update trackers
     t_search++;
@@ -232,9 +235,9 @@ std::size_t CacheHashTable::read_length(std::size_t &i, const std::size_t LIMIT)
 
 
 
-void CacheHashTable::write_length(std::size_t &i, std::size_t length, const std::size_t LIMIT)
+void CacheHashTable::write_length(std::size_t &i, std::size_t length)
 {
-    while (length > 0 && i < LIMIT)
+    while (length > 0)
     {
         if (length >= 256) m_table[i] = 255;
         else               m_table[i] = length;
@@ -243,7 +246,7 @@ void CacheHashTable::write_length(std::size_t &i, std::size_t length, const std:
         i++;
     }
     
-    if (m_table[i-1] == 255 && i < LIMIT)
+    if (m_table[i-1] == 255)
     {
         m_table[i] = 0;
         i++;
@@ -252,12 +255,12 @@ void CacheHashTable::write_length(std::size_t &i, std::size_t length, const std:
 
 
 
-void CacheHashTable::write_string(std::size_t &i, const std::string &str, const std::size_t LIMIT)
+void CacheHashTable::write_string(std::size_t &i, const std::string &str)
 {
     write_length(i, str.size());
     
     std::size_t j = 0;
-    while (j < str.size() && i < LIMIT)
+    while (j < str.size())
     {
         m_table[i] = reinterpret_cast<const uint16_t&>(str[j]);
         i++;
