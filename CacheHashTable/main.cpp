@@ -52,6 +52,7 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
                 
+        std::cout << key << std::endl;
         cache.insert(key, key);
     }
     TimerMeasure END = Timer::now();
