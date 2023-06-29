@@ -45,12 +45,12 @@ private: // Trackers
 private:
     bool find_loc(const std::string& key, Range& range);
     
-    bool        compare_string(std::size_t& i, const std::string& key, std::size_t LIMIT = std::string::npos);
-    void        pass_string(std::size_t& i, std::size_t LIMIT = std::string::npos);
+    bool        compare_string(std::size_t& i, const std::string& key, const std::size_t LIMIT = std::string::npos);
+    void        pass_string(std::size_t& i, const std::size_t LIMIT = std::string::npos);
     
-    std::size_t read_length(std::size_t& i, std::size_t LIMIT = std::string::npos);
-    void        write_length(std::size_t& i, std::size_t length);
-    void        write_string(std::size_t& i, const std::string& str);
+    std::size_t read_length(std::size_t& i, const std::size_t LIMIT = std::string::npos);
+    void        write_length(std::size_t& i, std::size_t length, const std::size_t LIMIT = std::string::npos);
+    void        write_string(std::size_t& i, const std::string& str, const std::size_t LIMIT = std::string::npos);
 };
 
 #endif /* CacheHashTable_hpp */

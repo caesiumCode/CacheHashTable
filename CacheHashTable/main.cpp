@@ -45,30 +45,14 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     const int   LINE_BUFFER_SIZE = 1 << 10;
     char        line_buffer[LINE_BUFFER_SIZE];
     std::FILE* fp = std::fopen((path + filename).c_str(), "r");
-    
-    uint32_t counter = 0;
-    
+        
     TimerMeasure START = Timer::now();
     while (std::fgets(line_buffer, sizeof(line_buffer), fp))
     {
-        if (counter >= 1932907)
-        {
-            std::cout << counter << "HELLO\n";
-            cache.display();
-        }
-        
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
                 
         cache.insert(key, key);
-        
-        if (counter >= 1932907)
-        {
-            std::cout << counter << "HELLO\n";
-            cache.display();
-        }
-        
-        counter++;
     }
     TimerMeasure END = Timer::now();
         
