@@ -65,6 +65,11 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
+    if (key == "langenglish")
+    {
+        std::cout << key << std::endl;
+    }
+    
     Range range;
     bool found = find_loc(key, range);
     std::size_t span = range.upper - range.lower;
