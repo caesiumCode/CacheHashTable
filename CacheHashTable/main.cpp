@@ -51,7 +51,7 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
     TimerMeasure START = Timer::now();
     while (std::fgets(line_buffer, sizeof(line_buffer), fp))
     {
-        if (counter >= 1932906)
+        if (counter >= 1932907)
         {
             std::cout << counter << "HELLO\n";
             cache.display();
@@ -62,13 +62,13 @@ void test_model(CacheBase& cache, const std::string& path, const std::string& fi
                 
         cache.insert(key, key);
         
-        counter++;
-        
-        if (counter >= 1932906)
+        if (counter >= 1932907)
         {
             std::cout << counter << "HELLO\n";
             cache.display();
         }
+        
+        counter++;
     }
     TimerMeasure END = Timer::now();
         
