@@ -35,6 +35,7 @@ private:
     const uint32_t SIZE;
     
     const uint64_t SLOT_MASK;
+    const uint8_t  LOG_LENGTH;
     std::hash<std::string> m_hash_fun;
     
     uint8_t* m_table;

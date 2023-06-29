@@ -3,9 +3,10 @@
 
 CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
 : SLOTS(1 << log2_slots)
-, LENGTH(length)
 , SIZE(SLOTS * LENGTH)
 , SLOT_MASK(SLOTS - 1)
+, LOG_LENGTH(std::round(std::log2(length)))
+, LENGTH(1 << uint8_t(std::round(std::log2(length))))
 {
     m_table = new uint8_t[SIZE];
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
@@ -72,7 +73,7 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     if (new_span <= LENGTH)
     {
         KEY_HASH    = m_hash_fun(key) & SLOT_MASK;
-        START       = KEY_HASH * LENGTH;
+        START       = KEY_HASH << LOG_LENGTH;
         END         = START + LENGTH;
         
         Range range;
@@ -139,11 +140,9 @@ bool CacheHashTable::find_loc(const std::string &key, Range& range)
         match = compare_string(i, key);
     }
     
-    if (match)
-    {
-        range.lower = i_prev;
-        range.upper = i;
-    }
+    range.lower = i_prev;
+    range.upper = i;
+    
     return match;
 }
 
@@ -205,18 +204,22 @@ std::size_t CacheHashTable::read_length(std::size_t &i)
 
 void CacheHashTable::write_length(std::size_t &i, std::size_t length)
 {
-    while (length > 0 && i < END)
+    if (length >= 256)
     {
-        if (length >= 256) m_table[i] = 255;
-        else               m_table[i] = length;
+        while (length > 0 && i < END)
+        {
+            if (length >= 256) m_table[i] = 255;
+            else               m_table[i] = length;
+            
+            length -= m_table[i++];
+        }
         
-        length -= m_table[i++];
+        if (m_table[i-1] == 255 && i < END) m_table[i++] = 0;
     }
-    
-    if (m_table[i-1] == 255 && i < END)
+    else
     {
-        m_table[i] = 0;
-        i++;
+        m_table[i] = length;
+        ++i;
     }
 }
 
