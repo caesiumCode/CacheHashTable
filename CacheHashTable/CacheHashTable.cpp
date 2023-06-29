@@ -63,7 +63,8 @@ void CacheHashTable::display_trackers(double time)
 
 void CacheHashTable::insert(const std::string &key, const std::string &value)
 {
-    bool flag = (t_search == 1932907);
+    bool flag = (t_search >= 1932907);
+    if (flag) std::cout << t_search << std::endl;
     
     Range range;
     bool found = find_loc(key, range);
