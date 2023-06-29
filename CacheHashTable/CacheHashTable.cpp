@@ -12,6 +12,8 @@ CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
     
     t_hit    = 0;
     t_search = 0;
+    
+    std::cout << "CONSTRUCTOR\n";
 }
 
 
