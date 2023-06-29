@@ -117,6 +117,8 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     // Update trackers
     t_search++;
     t_hit += found;
+    
+    if (t_search == 1932907) std::cout << "CP 8" << std::endl;
 }
 
 
