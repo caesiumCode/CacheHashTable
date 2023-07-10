@@ -4,6 +4,7 @@
 
 #include "CacheHashTable.hpp"
 #include "CacheLRU.hpp"
+#include "SOA_CacheLRU.hpp"
 
 using Timer         = std::chrono::high_resolution_clock;
 using TimerMeasure  = std::chrono::time_point<Timer>;
@@ -34,6 +35,13 @@ int main(int argc, const char * argv[])
         uint32_t capacity = std::atoi(argv[4]);
         
         CacheLRU lru(capacity);
+        test_model(lru, path, filename);
+    }
+    else if (model == "blru")
+    {
+        uint32_t capacity = std::atoi(argv[4]);
+        
+        SOA_CacheLRU lru(capacity);
         test_model(lru, path, filename);
     }
     else std::cout << "UNKNOWN MODEL [" << model << "]" << std::endl;
