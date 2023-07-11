@@ -57,9 +57,9 @@ void CacheHashTable<HashT>::display_trackers(double time)
     std::cout << SLOTS << "x" << LENGTH << ",";             // model parameter
     std::cout << (double) time/t_search << ",";             // latency (ns)
     std::cout << (double) t_hit/t_search*100 << ",";        // hitrate (%)
-    std::cout << (double) size() << ",";                    // # pairs
-    std::cout << (double) content_size() << ",";            // content size (B)
-    std::cout << (double) bookkeeping_overhead();           // overhead (B)
+    std::cout << size() << ",";                             // # pairs
+    std::cout << content_size() << ",";                     // content size (B)
+    std::cout << bookkeeping_overhead();                    // overhead (B)
     std::cout << std::endl;
 }
 
