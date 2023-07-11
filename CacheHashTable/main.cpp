@@ -3,53 +3,73 @@
 #include <chrono>
 
 #include "CacheHashTable.hpp"
+#include "CacheHashTable.cpp"
+
 #include "CacheLRU.hpp"
-#include "SOA_CacheLRU.hpp"
+#include "CacheLRU.cpp"
+
 
 using Timer         = std::chrono::high_resolution_clock;
 using TimerMeasure  = std::chrono::time_point<Timer>;
 
 double estimate_reading_time(const std::string& path, const std::string& filename);
-void test_model(CacheBase& cache, const std::string& path, const std::string& filename);
+
+template<typename HashT>
+void select_model(const char * argv[]);
+
+template<typename HashT>
+void test_model(CacheBase<HashT>& cache, const std::string& path, const std::string& filename);
 
 /*
- ./program <path> <dataset> fht <log2_slots> <length>
- ./program <path> <dataset> lru <capacity>
+ ./program <path> <dataset> <hash> fht       <log2_slots> <length>
+ ./program <path> <dataset> <hash> (std|emh) <capacity>
  */
 int main(int argc, const char * argv[])
 {
-    std::string path     = std::string(argv[1]);
-    std::string filename = std::string(argv[2]);
-    std::string model    = std::string(argv[3]);
+    std::string hash = std::string(argv[3]);
     
-    if (model == "fht")
-    {
-        uint8_t  log2_slots = std::atoi(argv[4]);
-        uint32_t length     = std::atoi(argv[5]);
-        
-        CacheHashTable ht(log2_slots, length);
-        test_model(ht, path, filename);
-    }
-    else if (model == "lru")
-    {
-        uint32_t capacity = std::atoi(argv[4]);
-        
-        CacheLRU lru(capacity);
-        test_model(lru, path, filename);
-    }
-    else if (model == "blru")
-    {
-        uint32_t capacity = std::atoi(argv[4]);
-        
-        SOA_CacheLRU lru(capacity);
-        test_model(lru, path, filename);
-    }
-    else std::cout << "UNKNOWN MODEL [" << model << "]" << std::endl;
+    if      (hash == "std") select_model<std::hash<std::string>>(argv);
+    else if (hash == "xor") select_model<XorHash<73802>>(argv);
+    else if (hash == "wyh") select_model<WyHash>(argv);
+    else std::cout << "UNKNOWN HASH [" << hash << "]" << std::endl;
     
     return 0;
 }
 
-void test_model(CacheBase& cache, const std::string& path, const std::string& filename)
+template<typename HashT>
+void select_model(const char * argv[])
+{
+    std::string path     = std::string(argv[1]);
+    std::string filename = std::string(argv[2]);
+    std::string model    = std::string(argv[4]);
+    
+    if (model == "fht")
+    {
+        uint8_t  log2_slots = std::atoi(argv[5]);
+        uint32_t length     = std::atoi(argv[6]);
+        
+        CacheHashTable<HashT> ht(log2_slots, length);
+        test_model<HashT>(ht, path, filename);
+    }
+    else if (model == "std")
+    {
+        uint32_t capacity = std::atoi(argv[5]);
+        
+        CacheLRU<HashT, std::unordered_map<std::string, queue_it, HashT>> lru(capacity);
+        test_model<HashT>(lru, path, filename);
+    }
+    else if (model == "emh")
+    {
+        uint32_t capacity = std::atoi(argv[5]);
+        
+        CacheLRU<HashT, emhash7::HashMap<std::string, queue_it, HashT>> lru(capacity);
+        test_model<HashT>(lru, path, filename);
+    }
+    else std::cout << "UNKNOWN MODEL [" << model << "]" << std::endl;
+}
+
+template<typename HashT>
+void test_model(CacheBase<HashT>& cache, const std::string& path, const std::string& filename)
 {
     const int   LINE_BUFFER_SIZE = 1 << 10;
     char        line_buffer[LINE_BUFFER_SIZE];

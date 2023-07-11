@@ -11,6 +11,7 @@
 #include <cmath>
 
 #include "CacheBase.hpp"
+#include "CacheBase.cpp"
 
 struct Range
 {
@@ -18,7 +19,8 @@ struct Range
     std::size_t upper;
 };
 
-class CacheHashTable : public CacheBase
+template<typename HashT = std::hash<std::string>>
+class CacheHashTable : public CacheBase<HashT>
 {
 public:
     CacheHashTable(uint8_t log2_slots, uint32_t length);
@@ -30,6 +32,10 @@ public:
     void insert(const std::string& key, const std::string& value);
     bool find(const std::string& key, std::string& value);
     
+    uint64_t size();
+    uint64_t content_size();
+    uint64_t bookkeeping_overhead();
+    
 private:
     const uint32_t SLOTS;
     const uint32_t LENGTH;
@@ -37,7 +43,7 @@ private:
     
     const uint64_t SLOT_MASK;
     const uint8_t  LOG_LENGTH;
-    std::hash<std::string> m_hash_fun;
+    HashT m_hasher;
     
     uint8_t* m_table;
     
@@ -61,5 +67,6 @@ private:
     void        write_length(std::size_t& i, std::size_t length);
     void        write_string(std::size_t& i, const std::string& str);
 };
+
 
 #endif /* CacheHashTable_hpp */

@@ -1,6 +1,7 @@
 #include "CacheLRU.hpp"
 
-CacheLRU::CacheLRU(uint32_t capacity)
+template<typename HashT, typename MapT>
+CacheLRU<HashT, MapT>::CacheLRU(uint32_t capacity)
 : CAPACITY(capacity)
 {
     m_queue.clear();
@@ -10,35 +11,44 @@ CacheLRU::CacheLRU(uint32_t capacity)
     t_hit = 0;
 }
 
-void CacheLRU::display()
+template<typename HashT, typename MapT>
+void CacheLRU<HashT, MapT>::display()
 {
     
 }
 
-void CacheLRU::display_trackers(double time)
+template<typename HashT, typename MapT>
+void CacheLRU<HashT, MapT>::display_trackers(double time)
 {
-    uint64_t total_size = 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_queue.size() * 8 * 4 + get_content_size();
-    
-    std::cout << "lru,";                                // model
-    std::cout << CAPACITY << ",";                       // model parameter
-    std::cout << (double) time/t_search << ",";         // latency (ns)
-    std::cout << (double) t_hit/t_search*100 << ",";    // hitrate (%)
-    std::cout << (double) total_size;                   // size (B)
+    std::cout << get_map_name() << ",";                     // model
+    std::cout << CacheBase<HashT>::get_hash_name() << ",";  // Hash
+    std::cout << CAPACITY << ",";                           // model parameter
+    std::cout << (double) time/t_search << ",";             // latency (ns)
+    std::cout << (double) t_hit/t_search*100 << ",";        // hitrate (%)
+    std::cout << (double) size() << ",";                    // # pairs
+    std::cout << (double) content_size() << ",";            // content size (B)
+    std::cout << (double) bookkeeping_overhead();           // overhead (B)
     std::cout << std::endl;
 }
 
-void CacheLRU::insert(const std::string &key, const std::string &value)
+template<typename HashT, typename MapT>
+void CacheLRU<HashT, MapT>::insert(const std::string &key, const std::string &value)
 {
     auto it = m_map.find(key);
+    bool hit = it != m_map.end();
     
-    if (it != m_map.end())
+    if (hit)
     {
         m_queue.erase(it->second);
-        m_map.erase(it);
+        m_queue.push_front(make_pair(key, value));
+        
+        it->second = m_queue.begin();
     }
-    
-    m_queue.push_front(make_pair(key, value));
-    m_map.insert(make_pair(key, m_queue.begin()));
+    else
+    {
+        m_queue.push_front(make_pair(key, value));
+        m_map.insert(make_pair(key, m_queue.begin()));
+    }
     
     clean();
     
@@ -47,8 +57,8 @@ void CacheLRU::insert(const std::string &key, const std::string &value)
     t_hit += (it != m_map.end());
 }
 
-
-void CacheLRU::clean()
+template<typename HashT, typename MapT>
+void CacheLRU<HashT, MapT>::clean()
 {
     while(m_map.size() > CAPACITY)
     {
@@ -58,11 +68,24 @@ void CacheLRU::clean()
 };
 
 
-uint64_t CacheLRU::get_content_size()
+template<typename HashT, typename MapT>
+uint64_t CacheLRU<HashT, MapT>::content_size()
 {
-    uint32_t size = 0;
+    uint32_t s = 0;
     
-    for (const std::pair<std::string, std::string>& node : m_queue) size += node.first.size() + node.second.size();
+    for (const std::pair<std::string, std::string>& node : m_queue) s += node.first.size() + node.second.size();
     
-    return size;
+    return s;
+}
+
+template<typename HashT, typename MapT>
+uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const std::unordered_map<std::string, queue_it, HashT>& map)
+{
+    return 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_queue.size() * 8 * 4;
+}
+
+template<typename HashT, typename MapT>
+uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const emhash7::HashMap<std::string, queue_it, HashT>& map)
+{
+    return m_map.AllocSize(m_map.bucket_count()) + m_queue.size() * 8 * 4;
 }

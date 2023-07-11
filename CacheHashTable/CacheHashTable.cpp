@@ -1,7 +1,7 @@
 #include "CacheHashTable.hpp"
 
-
-CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
+template<typename HashT>
+CacheHashTable<HashT>::CacheHashTable(uint8_t log2_slots, uint32_t length)
 : SLOTS(1 << log2_slots)
 , SIZE(SLOTS * LENGTH)
 , SLOT_MASK(SLOTS - 1)
@@ -15,14 +15,14 @@ CacheHashTable::CacheHashTable(uint8_t log2_slots, uint32_t length)
     t_search = 0;    
 }
 
-
-CacheHashTable::~CacheHashTable()
+template<typename HashT>
+CacheHashTable<HashT>::~CacheHashTable()
 {
     delete [] m_table;
 }
 
-
-void CacheHashTable::display()
+template<typename HashT>
+void CacheHashTable<HashT>::display()
 {
     for (uint16_t slot = 0; slot < SLOTS; slot++)
     {
@@ -49,20 +49,23 @@ void CacheHashTable::display()
     }
 }
 
-
-void CacheHashTable::display_trackers(double time)
+template<typename HashT>
+void CacheHashTable<HashT>::display_trackers(double time)
 {
-    std::cout << "fht,";                                // model
-    std::cout << SLOTS << "x" << LENGTH << ",";         // model parameter
-    std::cout << (double) time/t_search << ",";         // latency (ns)
-    std::cout << (double) t_hit/t_search*100 << ",";    // hitrate (%)
-    std::cout << (double) SIZE;                         // size (B)
+    std::cout << "fht,";                                    // model
+    std::cout << CacheBase<HashT>::get_hash_name() << ",";  // Hash
+    std::cout << SLOTS << "x" << LENGTH << ",";             // model parameter
+    std::cout << (double) time/t_search << ",";             // latency (ns)
+    std::cout << (double) t_hit/t_search*100 << ",";        // hitrate (%)
+    std::cout << (double) size() << ",";                    // # pairs
+    std::cout << (double) content_size() << ",";            // content size (B)
+    std::cout << (double) bookkeeping_overhead();           // overhead (B)
     std::cout << std::endl;
 }
 
 
-
-void CacheHashTable::insert(const std::string &key, const std::string &value)
+template<typename HashT>
+void CacheHashTable<HashT>::insert(const std::string &key, const std::string &value)
 {
     // Update trackers
     t_search++;
@@ -72,7 +75,7 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
     
     if (new_span <= LENGTH)
     {
-        KEY_HASH    = m_hash_fun(key) & SLOT_MASK;
+        KEY_HASH    = m_hasher(key) & SLOT_MASK;
         START       = KEY_HASH << LOG_LENGTH;
         END         = START + LENGTH;
         
@@ -98,8 +101,8 @@ void CacheHashTable::insert(const std::string &key, const std::string &value)
 }
 
 
-
-bool CacheHashTable::find(const std::string &key, std::string &value)
+template<typename HashT>
+bool CacheHashTable<HashT>::find(const std::string &key, std::string &value)
 {
     Range range;
     
@@ -127,8 +130,8 @@ bool CacheHashTable::find(const std::string &key, std::string &value)
 }
 
 
-
-bool CacheHashTable::find_loc(const std::string &key, Range& range)
+template<typename HashT>
+bool CacheHashTable<HashT>::find_loc(const std::string &key, Range& range)
 {
     std::size_t i       = START;
     std::size_t i_prev  = i;
@@ -146,8 +149,8 @@ bool CacheHashTable::find_loc(const std::string &key, Range& range)
     return match;
 }
 
-
-bool CacheHashTable::compare_string(std::size_t& i, const std::string &key)
+template<typename HashT>
+bool CacheHashTable<HashT>::compare_string(std::size_t& i, const std::string &key)
 {
     // 3 D O T 4 D A T A 4 M A N Y ...
     // ^
@@ -183,15 +186,15 @@ bool CacheHashTable::compare_string(std::size_t& i, const std::string &key)
     return i < END;
 }
 
-
-void CacheHashTable::pass_string(std::size_t &i)
+template<typename HashT>
+void CacheHashTable<HashT>::pass_string(std::size_t &i)
 {
     i += read_length(i);
 }
 
 
-
-std::size_t CacheHashTable::read_length(std::size_t &i)
+template<typename HashT>
+std::size_t CacheHashTable<HashT>::read_length(std::size_t &i)
 {
     std::size_t len = m_table[i];
     while (m_table[i] == 255 && i < END-1) len += m_table[++i];
@@ -201,8 +204,8 @@ std::size_t CacheHashTable::read_length(std::size_t &i)
 }
 
 
-
-void CacheHashTable::write_length(std::size_t &i, std::size_t length)
+template<typename HashT>
+void CacheHashTable<HashT>::write_length(std::size_t &i, std::size_t length)
 {
     if (length >= 256)
     {
@@ -224,8 +227,8 @@ void CacheHashTable::write_length(std::size_t &i, std::size_t length)
 }
 
 
-
-void CacheHashTable::write_string(std::size_t &i, const std::string &str)
+template<typename HashT>
+void CacheHashTable<HashT>::write_string(std::size_t &i, const std::string &str)
 {
     std::size_t s = str.size();
     
@@ -233,4 +236,103 @@ void CacheHashTable::write_string(std::size_t &i, const std::string &str)
     std::copy(reinterpret_cast<const uint8_t*>(str.data()), reinterpret_cast<const uint8_t*>(str.data() + s), m_table+i);
     
     i += s;
+}
+
+template<typename HashT>
+uint64_t CacheHashTable<HashT>::bookkeeping_overhead()
+{
+    uint64_t s = 0;
+    
+    for (std::size_t START = 0; START < SIZE; START += LENGTH)
+    {
+        std::size_t END = START + LENGTH;
+        std::size_t i = START;
+        
+        while (i < END)
+        {
+            std::size_t i_prev = i;
+            uint64_t    part_s = 0;
+            bool        match  = false;
+            
+            // Read key
+            std::size_t len = read_length(i);
+            
+            if (i < END && len > 0)
+            {
+                part_s += (len / 256) + 1;
+                i += len;
+                
+                if (i < END)
+                {
+                    // Read data
+                    len = read_length(i);
+                    
+                    part_s += (len / 256) + 1;
+                    
+                    if (i + len <= END)
+                    {
+                        s += part_s;
+                        match = true;
+                    }
+                    
+                    i += len;
+                }
+            }
+            
+            if (!match)
+            {
+                s += END - i_prev;
+                i = END;
+            }
+        }
+    }
+    
+    return s;
+}
+
+template<typename HashT>
+uint64_t CacheHashTable<HashT>::content_size()
+{
+    return SIZE - bookkeeping_overhead();
+}
+
+template<typename HashT>
+uint64_t CacheHashTable<HashT>::size()
+{
+    uint64_t s = 0;
+    
+    for (std::size_t START = 0; START < SIZE; START += LENGTH)
+    {
+        std::size_t END = START + LENGTH;
+        std::size_t i = START;
+        
+        while (i < END)
+        {
+            bool match = false;
+            
+            // Read key
+            std::size_t len = read_length(i);
+            
+            if (i < END && len > 0)
+            {
+                i += len;
+                
+                if (i < END)
+                {
+                    // Read data
+                    len = read_length(i);
+
+                    if (i + len <= END) match = true;
+                    
+                    i += len;
+                }
+            }
+            
+            if (!match) i = END;
+            
+            s += match;
+        }
+    }
+    
+    return s;
 }

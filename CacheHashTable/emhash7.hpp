@@ -176,7 +176,7 @@ static_assert((int)INACTIVE < 0, "INACTIVE must negative (to int)");
 #endif
 
 //count the leading zero bit
-static int CTZ(size_t n)
+static inline int CTZ(size_t n)
 {
 #if defined(__x86_64__) || defined(_WIN32) || (__BYTE_ORDER__ && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 
