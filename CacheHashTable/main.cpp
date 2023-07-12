@@ -53,14 +53,14 @@ void select_model(const char * argv[])
     {
         uint32_t capacity = std::atoi(argv[5]);
         
-        CacheLRU<HashT, std::unordered_map<std::string, queue_it, HashT>> lru(capacity);
+        CacheLRU<HashT, std::unordered_map<std::string, queue_t, HashT>> lru(capacity);
         test_model<HashT>(lru, path, filename);
     }
     else if (model == "emh")
     {
         uint32_t capacity = std::atoi(argv[5]);
         
-        CacheLRU<HashT, emhash7::HashMap<std::string, queue_it, HashT>> lru(capacity);
+        CacheLRU<HashT, emhash7::HashMap<std::string, queue_t, HashT>> lru(capacity);
         test_model<HashT>(lru, path, filename);
     }
     else std::cout << "UNKNOWN MODEL [" << model << "]" << std::endl;

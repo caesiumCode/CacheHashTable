@@ -10,13 +10,23 @@
 #include "CacheBase.hpp"
 #include "CacheBase.cpp"
 
-using queue_it = std::list<std::pair<std::string, std::string>>::iterator;
+struct ListNode
+{
+    std::string key;
+    std::string value;
+    
+    ListNode* previous;
+    ListNode* next;
+};
 
-template<typename HashT = std::hash<std::string>, typename MapT = std::unordered_map<std::string, queue_it, HashT>>
+using queue_t = ListNode*;
+
+template<typename HashT = std::hash<std::string>, typename MapT = std::unordered_map<std::string, queue_t, HashT>>
 class CacheLRU : public CacheBase<HashT>
 {
 public:
     CacheLRU(uint32_t capacity);
+    ~CacheLRU();
     
     void display();
     void display_trackers(double time);
@@ -24,18 +34,22 @@ public:
     void insert(const std::string& key, const std::string& value);
     //bool find(const std::string& key, std::string& value);
     
-    uint64_t size() {return m_queue.size();}
+    uint64_t size() {return m_size;}
     uint64_t content_size();
     uint64_t bookkeeping_overhead() {return bookkeeping_overhead(MapT());}
     
     static std::string get_map_name() {return get_map_name(MapT());}
-    static std::string get_map_name(const std::unordered_map<std::string, queue_it, HashT>& map)    {return "std";}
-    static std::string get_map_name(const emhash7::HashMap<std::string, queue_it, HashT>& map)      {return "emh";}
+    static std::string get_map_name(const std::unordered_map<std::string, queue_t, HashT>& map)    {return "std";}
+    static std::string get_map_name(const emhash7::HashMap<std::string, queue_t, HashT>& map)      {return "emh";}
     
 private:
     const uint32_t CAPACITY;
         
-    std::list<std::pair<std::string, std::string>> m_queue;
+    ListNode* m_queue;
+    ListNode* m_front;
+    ListNode* m_back;
+    uint64_t m_size;
+    
     MapT m_map;
     
 private: // Trackers
@@ -43,10 +57,11 @@ private: // Trackers
     uint64_t t_search;
     
 private:
-    void     clean();
+    void detach(ListNode* node);
+    void attach(ListNode* node);
     
-    uint64_t bookkeeping_overhead(const std::unordered_map<std::string, queue_it, HashT>& map);
-    uint64_t bookkeeping_overhead(const emhash7::HashMap<std::string, queue_it, HashT>& map);
+    uint64_t bookkeeping_overhead(const std::unordered_map<std::string, queue_t, HashT>& map);
+    uint64_t bookkeeping_overhead(const emhash7::HashMap<std::string, queue_t, HashT>& map);
 };
 
 #endif /* CacheLRU_hpp */

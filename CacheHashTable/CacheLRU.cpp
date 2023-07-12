@@ -4,11 +4,26 @@ template<typename HashT, typename MapT>
 CacheLRU<HashT, MapT>::CacheLRU(uint32_t capacity)
 : CAPACITY(capacity)
 {
-    m_queue.clear();
+    m_queue = new ListNode[CAPACITY];
+    m_front = nullptr;
+    m_back = nullptr;
+    m_size = 0;
+    for (std::size_t i = 0; i < CAPACITY; i++)
+    {
+        m_queue[i].previous = nullptr;
+        m_queue[i].next     = nullptr;
+    }
+    
     m_map.clear();
     
     t_search = 0;
     t_hit = 0;
+}
+
+template<typename HashT, typename MapT>
+CacheLRU<HashT, MapT>::~CacheLRU()
+{
+    delete [] m_queue;
 }
 
 template<typename HashT, typename MapT>
@@ -37,35 +52,59 @@ void CacheLRU<HashT, MapT>::insert(const std::string &key, const std::string &va
     auto it = m_map.find(key);
     bool hit = it != m_map.end();
     
-    if (hit)
+    // Select a node
+    ListNode* node;
+    if (!hit)
     {
-        m_queue.erase(it->second);
-        m_queue.push_front(make_pair(key, value));
+        if (m_size < CAPACITY)
+        {
+            node = &m_queue[m_size];
+            m_size++;
+        }
+        else
+        {
+            node = m_back;
+            
+            m_map.erase(node->key);
+        }
         
-        it->second = m_queue.begin();
+        m_map[key]  = node;
+        node->key   = key;
+        node->value = value;
     }
-    else
-    {
-        m_queue.push_front(make_pair(key, value));
-        m_map.insert(make_pair(key, m_queue.begin()));
-    }
+    else node = it->second;
     
-    clean();
+    // Move-to-front
+    detach(node);
+    attach(node);
     
     // Update trackers
     t_search++;
-    t_hit += (it != m_map.end());
+    t_hit += hit;
 }
 
 template<typename HashT, typename MapT>
-void CacheLRU<HashT, MapT>::clean()
+void CacheLRU<HashT, MapT>::detach(ListNode *node)
 {
-    while(m_map.size() > CAPACITY)
-    {
-        m_map.erase(m_queue.rbegin()->first);
-        m_queue.pop_back();
-    }
-};
+    if (node == m_back)  m_back  = node->previous;
+    if (node == m_front) m_front = node->next;
+    
+    if (node->previous) node->previous->next = node->next;
+    if (node->next)     node->next->previous = node->previous;
+}
+
+template<typename HashT, typename MapT>
+void CacheLRU<HashT, MapT>::attach(ListNode *node)
+{
+    node->previous  = nullptr;
+    node->next      = m_front;
+    
+    if (m_front) m_front->previous = node;
+    
+    if (m_size == 1) m_back = node;
+    
+    m_front = node;
+}
 
 
 template<typename HashT, typename MapT>
@@ -73,19 +112,19 @@ uint64_t CacheLRU<HashT, MapT>::content_size()
 {
     uint32_t s = 0;
     
-    for (const std::pair<std::string, std::string>& node : m_queue) s += node.first.size() + node.second.size();
+    for (std::size_t i = 0; i < m_size; i++) s += m_queue[i].key.size() + m_queue[i].value.size();
     
     return s;
 }
 
 template<typename HashT, typename MapT>
-uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const std::unordered_map<std::string, queue_it, HashT>& map)
+uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const std::unordered_map<std::string, queue_t, HashT>& map)
 {
-    return 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_queue.size() * 8 * 4;
+    return 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_size * 8 * 4;
 }
 
 template<typename HashT, typename MapT>
-uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const emhash7::HashMap<std::string, queue_it, HashT>& map)
+uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const emhash7::HashMap<std::string, queue_t, HashT>& map)
 {
-    return m_map.AllocSize(m_map.bucket_count()) + m_queue.size() * 8 * 4;
+    return m_map.AllocSize(m_map.bucket_count()) + m_size * 8 * 4;
 }
