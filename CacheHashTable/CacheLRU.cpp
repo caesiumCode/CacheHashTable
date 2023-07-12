@@ -120,11 +120,11 @@ uint64_t CacheLRU<HashT, MapT>::content_size()
 template<typename HashT, typename MapT>
 uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const std::unordered_map<std::string, queue_t, HashT>& map)
 {
-    return 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + m_size * 8 * 4;
+    return 8 * m_map.bucket_count() + (8 + 8) * m_map.size() + CAPACITY * 8 * 4;
 }
 
 template<typename HashT, typename MapT>
 uint64_t CacheLRU<HashT, MapT>::bookkeeping_overhead(const emhash7::HashMap<std::string, queue_t, HashT>& map)
 {
-    return m_map.AllocSize(m_map.bucket_count()) + m_size * 8 * 4;
+    return m_map.AllocSize(m_map.bucket_count()) + CAPACITY * 8 * 4;
 }
