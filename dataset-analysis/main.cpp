@@ -43,7 +43,7 @@ int main(int argc, const char * argv[])
     
     int i = 0;
     auto it = counter.begin();
-    while (i <= 20)
+    while (i <= 100)
     {
         std::cout << it->second << ",";
         it++;
