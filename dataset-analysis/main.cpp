@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <map>
 
 using Timer         = std::chrono::high_resolution_clock;
 using TimerMeasure  = std::chrono::time_point<Timer>;
@@ -14,6 +15,7 @@ int main(int argc, const char * argv[])
     std::string path     = std::string(argv[1]);
     std::string filename = std::string(argv[2]);
     
+    std::map<std::string, uint64_t> counter;
     
     const int   LINE_BUFFER_SIZE = 1 << 10;
     char        line_buffer[LINE_BUFFER_SIZE];
@@ -27,13 +29,26 @@ int main(int argc, const char * argv[])
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
         
+        auto it = counter.find(key);
+        if (it != counter.end()) it->second++;
+        
         ++n;
     }
     TimerMeasure END = Timer::now();
         
     std::fclose(fp);
     
-    std::cout << filename << "," << n << "," << std::chrono::duration<double, std::nano>(END - START).count() << std::endl;
+    //std::cout << filename << "," << n << "," << std::chrono::duration<double, std::nano>(END - START).count() << std::endl;
+    std::cout << filename << ",";
+    
+    int i = 0;
+    auto it = counter.begin();
+    while (i <= 20)
+    {
+        std::cout << it->second << ",";
+        it++;
+    }
+    
     
     return 0;
 }
