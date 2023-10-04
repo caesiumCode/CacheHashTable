@@ -1,5 +1,5 @@
-#ifndef CacheHashTable_hpp
-#define CacheHashTable_hpp
+#ifndef CounterHashTable_hpp
+#define CounterHashTable_hpp
 
 #include <cstdint>
 #include <functional>
@@ -68,4 +68,4 @@ private:
     void        log_increment(uint8_t& counter);
 };
 
-#endif /* CacheHashTable_hpp */
+#endif /* CounterHashTable_hpp */

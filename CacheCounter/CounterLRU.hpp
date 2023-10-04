@@ -1,5 +1,5 @@
-#ifndef CacheLRU_hpp
-#define CacheLRU_hpp
+#ifndef CounterLRU_hpp
+#define CounterLRU_hpp
 
 #include <iostream>
 #include <string>
@@ -22,11 +22,11 @@ struct ListNode
 using queue_t = ListNode*;
 
 template<typename HashT = std::hash<std::string>, typename MapT = std::unordered_map<std::string, queue_t, HashT>>
-class CacheLRU : public CacheBase<HashT>
+class CounterLRU : public CounterBase<HashT>
 {
 public:
-    CacheLRU(uint32_t capacity);
-    ~CacheLRU();
+    CounterLRU(uint32_t capacity);
+    ~CounterLRU();
     
     void display();
     void display_trackers(double time);
@@ -63,4 +63,4 @@ private:
     uint64_t bookkeeping_overhead(const emhash7::HashMap<std::string, queue_t, HashT>& map);
 };
 
-#endif /* CacheLRU_hpp */
+#endif /* CounterLRU_hpp */

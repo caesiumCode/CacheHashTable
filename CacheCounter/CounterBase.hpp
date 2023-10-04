@@ -1,5 +1,5 @@
-#ifndef CacheBase_hpp
-#define CacheBase_hpp
+#ifndef CounterBase_hpp
+#define CounterBase_hpp
 
 #include <string>
 #include <unordered_map>
@@ -10,11 +10,11 @@
 #include "emhash7.hpp"
 
 template<typename HashT = std::hash<std::string>>
-class CacheBase
+class CounterBase
 {
 public:
-    CacheBase() = default;
-    virtual ~CacheBase() = default;
+    CounterBase() = default;
+    virtual ~CounterBase() = default;
     
     virtual void display() = 0;
     virtual void display_trackers(double time) = 0;
@@ -33,4 +33,4 @@ public:
     static std::string get_hash_name(const WyHash& hash)                    {return "wyh";}
 };
 
-#endif /* CacheBase_hpp */
+#endif /* CounterBase_hpp */
