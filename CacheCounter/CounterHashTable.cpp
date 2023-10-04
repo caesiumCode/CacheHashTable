@@ -66,33 +66,7 @@ void CounterHashTable<HashT>::display_trackers(double time)
     std::cout << size() << ",";                             // # pairs
     std::cout << content_size() << ",";                     // content size (B)
     std::cout << bookkeeping_overhead();                    // overhead (B)
-    std::cout << std::endl << std::endl;
-    
-    for (std::size_t i = 0; i < SLOTS; i++)
-    {
-        std::size_t j = i*LENGTH;
-        
-        while (j < (i+1)*LENGTH && j < i*LENGTH + 64)
-        {
-            uint8_t len = m_table[j];
-
-            std::cout << (int)len << " ";
-            j++;
-            std::size_t j_start = j;
-            while (j < j_start+len && j < (i+1)*LENGTH)
-            {
-                std::cout << (char)m_table[j] << "_";
-                j++;
-            }
-            if (j < (i+1)*LENGTH)
-            {
-                std::cout << (int)m_table[j] << " ";
-                j++;
-            }
-        }
-        
-        std::cout << std::endl;
-    }
+    std::cout << std::endl;
 }
 
 
