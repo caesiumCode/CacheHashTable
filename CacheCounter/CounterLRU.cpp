@@ -47,7 +47,7 @@ void CacheLRU<HashT, MapT>::display_trackers(double time)
 }
 
 template<typename HashT, typename MapT>
-void CacheLRU<HashT, MapT>::insert(const std::string &key, const std::string &value)
+void CacheLRU<HashT, MapT>::increment(const std::string &key)
 {
     auto it = m_map.find(key);
     bool hit = it != m_map.end();
@@ -69,9 +69,13 @@ void CacheLRU<HashT, MapT>::insert(const std::string &key, const std::string &va
         
         m_map[key]  = node;
         node->key   = key;
-        node->value = value;
+        node->value = 1;
     }
-    else node = it->second;
+    else 
+    {
+        node = it->second;
+        node->value++;
+    }
     
     // Move-to-front
     detach(node);
