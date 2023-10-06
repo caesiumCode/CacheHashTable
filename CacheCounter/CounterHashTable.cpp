@@ -188,7 +188,7 @@ uint64_t CounterHashTable<HashT>::bookkeeping_overhead()
     for (std::size_t START = 0; START < SIZE; START += LENGTH)
     {
         std::size_t END = START + LENGTH;
-        std::size_t i = START;
+        std::size_t i   = START;
         
         while (i < END)
         {
@@ -196,7 +196,7 @@ uint64_t CounterHashTable<HashT>::bookkeeping_overhead()
             
             if (len > 0 && i + 1 + len + 1 <= END)
             {
-                s += 2;
+                s++;
                 i += len+2;
             }
             else
@@ -224,7 +224,7 @@ uint64_t CounterHashTable<HashT>::size()
     for (std::size_t START = 0; START < SIZE; START += LENGTH)
     {
         std::size_t END = START + LENGTH;
-        std::size_t i = START;
+        std::size_t i   = START;
         
         while (i < END)
         {
