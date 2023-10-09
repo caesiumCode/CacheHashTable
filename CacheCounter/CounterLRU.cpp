@@ -49,7 +49,7 @@ void CounterLRU<HashT, MapT>::display_trackers(double time)
 template<typename HashT, typename MapT>
 void CounterLRU<HashT, MapT>::display_counters()
 {
-    const std::size_t ORDERED_SIZE = 8;
+    const std::size_t ORDERED_SIZE = 64;
     std::array<std::pair<std::string, uint64_t>, ORDERED_SIZE> counters;
     
     for (const auto& kv : m_map)
@@ -65,8 +65,8 @@ void CounterLRU<HashT, MapT>::display_counters()
         }
     }
     
-    
-    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << std::setw(16) << counters[i].first << std::setw(6) << counters[i].second;
+    std::cout << get_map_name() << "," << CounterBase<HashT>::get_hash_name() << "," << CAPACITY << "," << content_size() + bookkeeping_overhead();
+    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << counters[i].second;
     
     std::cout << std::endl;
 }

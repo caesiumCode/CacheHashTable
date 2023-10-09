@@ -72,7 +72,7 @@ void CounterHashTable<HashT>::display_trackers(double time)
 template<typename HashT>
 void CounterHashTable<HashT>::display_counters()
 {
-    const std::size_t ORDERED_SIZE = 8;
+    const std::size_t ORDERED_SIZE = 64;
     std::array<std::pair<std::string, uint64_t>, ORDERED_SIZE> counters{std::make_pair("", 0)};
     
     for (std::size_t START = 0; START < SIZE; START += LENGTH)
@@ -102,10 +102,10 @@ void CounterHashTable<HashT>::display_counters()
         }
     }
     
+    std::cout << "fht," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
+    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << counters[i].second;
     
-    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << std::setw(16) << counters[i].first << std::setw(6) << counters[i].second;
-    
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl;
 }
 
 
@@ -136,7 +136,7 @@ void CounterHashTable<HashT>::increment(const std::string &key)
         Range range;
         bool        found       = find_loc(key, range);
         std::size_t span        = found * (range.upper - range.lower);
-        uint8_t     log_counter = found * m_table[range.upper-1];
+        uint8_t     log_counter = found ? m_table[range.upper-1] : 0;
         
         // Shift everything in the slot
         std::size_t end = found ? range.upper : END;
@@ -186,6 +186,12 @@ bool CounterHashTable<HashT>::compare_string(std::size_t& i, const std::string &
     // Read length
     std::size_t len = m_table[i];
     i++;
+    
+    if (i + len >= SIZE)
+    {
+        i = END;
+        return false;
+    }
     
     // 3 D O T 4 4 M A N Y ...
     //   ^
