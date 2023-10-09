@@ -69,6 +69,45 @@ void CounterHashTable<HashT>::display_trackers(double time)
     std::cout << std::endl;
 }
 
+template<typename HashT>
+void CounterHashTable<HashT>::display_counters()
+{
+    const std::size_t ORDERED_SIZE = 8;
+    std::array<std::pair<std::string, uint64_t>, ORDERED_SIZE> counters{std::make_pair("", 0)};
+    
+    for (std::size_t START = 0; START < SIZE; START += LENGTH)
+    {
+        std::size_t END = START + LENGTH;
+        std::size_t i   = START;
+        
+        while (i < END)
+        {
+            std::size_t len = m_table[i];
+            
+            if (len > 0 && i + 1 + len + 1 <= END)
+            {
+                uint64_t val = 1 << m_table[i + len + 1];
+                for (std::size_t j = 0; j < ORDERED_SIZE; j++) if (val > counters[j].second)
+                {
+                    std::shift_right(counters.begin() + j, counters.end(), 1);
+                    counters[j].first  = std::string(m_table+i+1, m_table+i+1+len);
+                    counters[j].second = val;
+                    
+                    break;
+                }
+                
+                i += len+2;
+            }
+            else i = END;
+        }
+    }
+    
+    
+    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << std::setw(16) << counters[i].first << std::setw(6) << counters[i].second;
+    
+    std::cout << std::endl << std::endl;
+}
+
 
 template<typename HashT>
 uint64_t CounterHashTable<HashT>::rng()
@@ -86,7 +125,7 @@ void CounterHashTable<HashT>::increment(const std::string &key)
     t_search++;
     
     // Check plausibilty
-    std::size_t new_span = ((key.size() >> 8) + 1) + key.size() + 1;
+    std::size_t new_span = key.size() + 2;
     
     if (new_span <= LENGTH)
     {
@@ -156,7 +195,7 @@ bool CounterHashTable<HashT>::compare_string(std::size_t& i, const std::string &
     if (!std::equal(m_table + i, m_table + i + len, key_translation, key_translation + key.size()))
     {
         // Cannot match so pass data
-        i += len;
+        i += len + 1;
         return false;
     }
     

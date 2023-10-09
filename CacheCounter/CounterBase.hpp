@@ -18,6 +18,7 @@ public:
     
     virtual void display() = 0;
     virtual void display_trackers(double time) = 0;
+    virtual void display_counters() = 0;
     
     virtual void increment(const std::string& key) = 0;
     

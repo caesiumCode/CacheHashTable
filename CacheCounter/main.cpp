@@ -74,12 +74,16 @@ void test_model(CounterBase<HashT>& cache, const std::string& path, const std::s
     std::FILE* fp = std::fopen((path + filename).c_str(), "r");
         
     TimerMeasure START = Timer::now();
+    std::size_t pos = 0;
     while (std::fgets(line_buffer, sizeof(line_buffer), fp))
     {
         std::string key(line_buffer);
         if (key.back() == '\n') key.pop_back();
         
         cache.increment(key);
+        
+        if ((pos & (1024-1)) == 0) cache.display_counters();
+        pos++;
     }
     TimerMeasure END = Timer::now();
         

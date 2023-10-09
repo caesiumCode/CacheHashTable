@@ -28,6 +28,7 @@ public:
     
     void display();
     void display_trackers(double time);
+    void display_counters();
     
     void increment(const std::string& key);
     

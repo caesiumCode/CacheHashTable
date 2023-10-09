@@ -6,6 +6,7 @@
 #include <list>
 #include <unordered_map>
 #include <utility>
+#include <iomanip>
 
 #include "CounterBase.hpp"
 #include "CounterBase.cpp"
@@ -30,6 +31,7 @@ public:
     
     void display();
     void display_trackers(double time);
+    void display_counters();
     
     void increment(const std::string& key);
     
