@@ -19,8 +19,8 @@ template<typename HashT>
 void test_model(CounterBase<HashT>& cache, const std::string& path, const std::string& filename, bool perf);
 
 /*
- ./program (perf|track) <path> <dataset> <hash> fht       <log2_slots> <length>
- ./program (perf|track) <path> <dataset> <hash> (std|emh) <capacity>
+ ./program (perf|track) <path> <dataset> <hash> fht(1|2|3) <log2_slots> <length>
+ ./program (perf|track) <path> <dataset> <hash> (std|emh)  <capacity>
  */
 int main(int argc, const char * argv[])
 {
@@ -41,13 +41,32 @@ void select_model(const char * argv[])
     std::string filename = std::string(argv[3]);
     std::string model    = std::string(argv[5]);
     
-    if (model == "fht")
+    if (model.substr(0, 3) == "fht")
     {
         uint8_t  log2_slots = std::atoi(argv[6]);
         uint32_t length     = std::atoi(argv[7]);
         
-        CounterHashTable<HashT> ht(log2_slots, length);
-        test_model<HashT>(ht, path, filename, std::string(argv[1]) == "perf");
+        int p = std::stoi(model.substr(3, 1));
+        if (p == 1)
+        {
+            CounterHashTable<HashT, 1> ht(log2_slots, length);
+            test_model<HashT>(ht, path, filename, std::string(argv[1]) == "perf");
+        }
+        else if (p == 2)
+        {
+            CounterHashTable<HashT, 2> ht(log2_slots, length);
+            test_model<HashT>(ht, path, filename, std::string(argv[1]) == "perf");
+        }
+        else if (p == 4)
+        {
+            CounterHashTable<HashT, 4> ht(log2_slots, length);
+            test_model<HashT>(ht, path, filename, std::string(argv[1]) == "perf");
+        }
+        else
+        {
+            CounterHashTable<HashT, 1> ht(log2_slots, length);
+            test_model<HashT>(ht, path, filename, std::string(argv[1]) == "perf");
+        }
     }
     else if (model == "std")
     {

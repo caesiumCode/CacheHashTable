@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 
 #include "CounterBase.hpp"
 #include "CounterBase.cpp"
@@ -19,7 +20,7 @@ struct Range
     std::size_t upper;
 };
 
-template<typename HashT = std::hash<std::string>>
+template<typename HashT = std::hash<std::string>, uint8_t P = 4>
 class CounterHashTable : public CounterBase<HashT>
 {
 public:
@@ -43,10 +44,13 @@ private:
     
     const uint64_t SLOT_MASK;
     const uint8_t  LOG_LENGTH;
-    HashT m_hasher;
+    HashT   m_hasher;
     
-    uint64_t* RNG_MASK;
-    uint64_t  RNG_STATE;
+    std::vector<uint64_t> LOG_INV;
+    std::vector<uint64_t> RNG_MASK;
+    std::vector<uint64_t> RNG_RANGE;
+    uint64_t RNG_CP_RANGE;
+    uint64_t RNG_STATE;
     
     uint8_t* m_table;
     
@@ -66,7 +70,7 @@ private:
     void        write_string(std::size_t& i, const std::string& str);
     
     uint64_t    rng();
-    void        log_increment(uint8_t& counter);
+    uint8_t     log_increment(uint8_t counter);
 };
 
 #endif /* CounterHashTable_hpp */

@@ -1,7 +1,7 @@
 #include "CounterHashTable.hpp"
 
-template<typename HashT>
-CounterHashTable<HashT>::CounterHashTable(uint8_t log2_slots, uint32_t length)
+template<typename HashT, uint8_t P>
+CounterHashTable<HashT, P>::CounterHashTable(uint8_t log2_slots, uint32_t length)
 : SLOTS(1 << log2_slots)
 , SIZE(SLOTS * LENGTH)
 , SLOT_MASK(SLOTS - 1)
@@ -12,23 +12,57 @@ CounterHashTable<HashT>::CounterHashTable(uint8_t log2_slots, uint32_t length)
     m_table = new uint8_t[SIZE];
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
     
-    RNG_MASK = new uint64_t[64];
+    RNG_MASK.resize(64);
     RNG_MASK[0] = 0;
     for (std::size_t i = 1; i < 64; i++) RNG_MASK[i] = 2 * RNG_MASK[i-1] + 1;
+    
+    const std::size_t LOG_RANGE = P * 64;
+    LOG_INV.resize(LOG_RANGE);
+    RNG_RANGE.resize(LOG_RANGE);
+    for (std::size_t i = 0; i < LOG_RANGE; i++)
+    {
+        if constexpr(P == 4)
+        {
+            if      (i <= 64)  RNG_RANGE[i] = std::ceil((M_SQRT2 + 1.) * (std::sqrt(M_SQRT2) + 1.) * std::pow(std::pow(2., .75), i));
+            else if (i <= 128) RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 64));
+            else if (i <= 192) RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 128));
+            else               RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 192));
+            LOG_INV[i] = std::ceil(std::pow(std::sqrt(M_SQRT2), i));
+        }
+        else if constexpr(P == 2)
+        {
+            if (i <= 64) RNG_RANGE[i] = std::ceil((M_SQRT2 + 1.) * std::pow(M_SQRT2, i));
+            else         RNG_RANGE[i] = std::ceil(std::pow(M_SQRT2, i - 64));
+            LOG_INV[i] = std::ceil(std::pow(M_SQRT2, i));
+        }
+        else
+        {
+            RNG_RANGE[i] = 1;
+            LOG_INV[i]   = 1 << i;
+        }
+    }
+    
+    if constexpr(P == 2)
+    {
+        RNG_CP_RANGE = std::ceil((M_SQRT2 + 1.) * 4294967296.);
+    }
+    else if constexpr(P == 4)
+    {
+        RNG_CP_RANGE = std::ceil((M_SQRT2 + 1.) * (std::sqrt(M_SQRT2) + 1.) * 281474976710656.);
+    }
     
     t_hit    = 0;
     t_search = 0;
 }
 
-template<typename HashT>
-CounterHashTable<HashT>::~CounterHashTable()
+template<typename HashT, uint8_t P>
+CounterHashTable<HashT, P>::~CounterHashTable()
 {
     delete [] m_table;
-    delete [] RNG_MASK;
 }
 
-template<typename HashT>
-void CounterHashTable<HashT>::display()
+template<typename HashT, uint8_t P>
+void CounterHashTable<HashT, P>::display()
 {
     for (uint16_t slot = 0; slot < SLOTS; slot++)
     {
@@ -55,8 +89,8 @@ void CounterHashTable<HashT>::display()
     }
 }
 
-template<typename HashT>
-void CounterHashTable<HashT>::display_trackers(double time)
+template<typename HashT, uint8_t P>
+void CounterHashTable<HashT, P>::display_trackers(double time)
 {
     std::cout << "fht,";                                    // model
     std::cout << CounterBase<HashT>::get_hash_name() << ",";  // Hash
@@ -69,8 +103,8 @@ void CounterHashTable<HashT>::display_trackers(double time)
     std::cout << std::endl;
 }
 
-template<typename HashT>
-void CounterHashTable<HashT>::display_counters()
+template<typename HashT, uint8_t P>
+void CounterHashTable<HashT, P>::display_counters()
 {
     const std::size_t ORDERED_SIZE = 64;
     std::array<std::pair<std::string, uint64_t>, ORDERED_SIZE> counters{std::make_pair("", 0)};
@@ -86,7 +120,7 @@ void CounterHashTable<HashT>::display_counters()
             
             if (len > 0 && i + 1 + len + 1 <= END)
             {
-                uint64_t val = 1 << m_table[i + len + 1];
+                uint64_t val = m_table[i + len + 1];
                 for (std::size_t j = 0; j < ORDERED_SIZE; j++) if (val > counters[j].second)
                 {
                     std::shift_right(counters.begin() + j, counters.end(), 1);
@@ -103,14 +137,14 @@ void CounterHashTable<HashT>::display_counters()
     }
     
     std::cout << "fht," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
-    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << counters[i].second;
+    for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << LOG_INV[counters[i].second];
     
     std::cout << std::endl;
 }
 
 
-template<typename HashT>
-uint64_t CounterHashTable<HashT>::rng()
+template<typename HashT, uint8_t P>
+uint64_t CounterHashTable<HashT, P>::rng()
 {
     uint64_t z = (RNG_STATE += 0x9e3779b97f4a7c15);
     z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
@@ -118,8 +152,32 @@ uint64_t CounterHashTable<HashT>::rng()
     return z ^ (z >> 31);
 }
 
-template<typename HashT>
-void CounterHashTable<HashT>::increment(const std::string &key)
+template<typename HashT, uint8_t P>
+uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
+{
+    if constexpr(P == 4)
+    {
+        return counter +
+        (
+            (counter <= 64  || rng() < RNG_CP_RANGE) &&
+            (counter <= 128 || (rng() & 65535) == 0) &&
+            (counter <= 192 || (rng() & 65535) == 0) &&
+            ((rng() & RNG_MASK[counter & 63]) < RNG_RANGE[counter & 63])
+         );
+    }
+    else if constexpr(P == 2)
+    {
+        return counter +
+        (
+            (counter <= 64 || rng() < RNG_CP_RANGE) &&
+            ((rng() & RNG_MASK[counter & 63]) < RNG_RANGE[counter & 63])
+         );
+    }
+    else return counter + ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter]);
+}
+
+template<typename HashT, uint8_t P>
+void CounterHashTable<HashT, P>::increment(const std::string &key)
 {
     // Update trackers
     t_search++;
@@ -148,8 +206,9 @@ void CounterHashTable<HashT>::increment(const std::string &key)
         // Insert at the beginning of the slot
         std::size_t i = START;
         write_string(i, key);
-        uint8_t new_counter = found && (rng() & RNG_MASK[log_counter]) == 0 ? log_counter+1 : log_counter;
-        m_table[i] = new_counter;
+        
+        if (found) m_table[i] = log_increment(log_counter);
+        else       m_table[i] = log_counter;
         
         // Update trackers
         t_hit += found;
@@ -157,8 +216,8 @@ void CounterHashTable<HashT>::increment(const std::string &key)
 }
 
 
-template<typename HashT>
-bool CounterHashTable<HashT>::find_loc(const std::string &key, Range& range)
+template<typename HashT, uint8_t P>
+bool CounterHashTable<HashT, P>::find_loc(const std::string &key, Range& range)
 {
     std::size_t i       = START;
     std::size_t i_prev  = i;
@@ -176,8 +235,8 @@ bool CounterHashTable<HashT>::find_loc(const std::string &key, Range& range)
     return match;
 }
 
-template<typename HashT>
-bool CounterHashTable<HashT>::compare_string(std::size_t& i, const std::string &key)
+template<typename HashT, uint8_t P>
+bool CounterHashTable<HashT, P>::compare_string(std::size_t& i, const std::string &key)
 {
     // 3 D O T 4 4 M A N Y ...
     // ^
@@ -214,8 +273,8 @@ bool CounterHashTable<HashT>::compare_string(std::size_t& i, const std::string &
 }
 
 
-template<typename HashT>
-void CounterHashTable<HashT>::write_string(std::size_t &i, const std::string &str)
+template<typename HashT, uint8_t P>
+void CounterHashTable<HashT, P>::write_string(std::size_t &i, const std::string &str)
 {
     std::size_t s = str.size();
     
@@ -225,8 +284,8 @@ void CounterHashTable<HashT>::write_string(std::size_t &i, const std::string &st
     i += 1 + s;
 }
 
-template<typename HashT>
-uint64_t CounterHashTable<HashT>::bookkeeping_overhead()
+template<typename HashT, uint8_t P>
+uint64_t CounterHashTable<HashT, P>::bookkeeping_overhead()
 {
     uint64_t s = 0;
     
@@ -255,14 +314,14 @@ uint64_t CounterHashTable<HashT>::bookkeeping_overhead()
     return s;
 }
 
-template<typename HashT>
-uint64_t CounterHashTable<HashT>::content_size()
+template<typename HashT, uint8_t P>
+uint64_t CounterHashTable<HashT, P>::content_size()
 {
     return SIZE - bookkeeping_overhead();
 }
 
-template<typename HashT>
-uint64_t CounterHashTable<HashT>::size()
+template<typename HashT, uint8_t P>
+uint64_t CounterHashTable<HashT, P>::size()
 {
     uint64_t s = 0;
     
