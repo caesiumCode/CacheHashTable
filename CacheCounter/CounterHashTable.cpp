@@ -12,9 +12,15 @@ CounterHashTable<HashT, P>::CounterHashTable(uint8_t log2_slots, uint32_t length
     m_table = new uint8_t[SIZE];
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
     
-    RNG_MASK.resize(64);
-    RNG_MASK[0] = 0;
-    for (std::size_t i = 1; i < 64; i++) RNG_MASK[i] = 2 * RNG_MASK[i-1] + 1;
+    RNG_MASK.resize(256);
+    RNG_MASK[0]   = 0;
+    for (std::size_t i = 1; i < 64; i++)
+    {
+        RNG_MASK[i]     = 2 * RNG_MASK[i-1] + 1;
+        RNG_MASK[i+64]  = RNG_MASK[i];
+        RNG_MASK[i+128] = RNG_MASK[i];
+        RNG_MASK[i+192] = RNG_MASK[i];
+    }
     
     const std::size_t LOG_RANGE = P * 64;
     LOG_INV.resize(LOG_RANGE);
@@ -136,7 +142,7 @@ void CounterHashTable<HashT, P>::display_counters()
         }
     }
     
-    std::cout << "fht" << P << "," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
+    std::cout << "fht" << int(P) << "," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
     for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << LOG_INV[counters[i].second];
     
     std::cout << std::endl;
@@ -162,7 +168,7 @@ uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
             (counter <= 64  || rng() < RNG_CP_RANGE) &&
             (counter <= 128 || (rng() & 65535) == 0) &&
             (counter <= 192 || (rng() & 65535) == 0) &&
-            ((rng() & RNG_MASK[counter & 63]) < RNG_RANGE[counter & 63])
+            ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter])
          );
     }
     else if constexpr(P == 2)
@@ -170,7 +176,7 @@ uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
         return counter +
         (
             (counter <= 64 || rng() < RNG_CP_RANGE) &&
-            ((rng() & RNG_MASK[counter & 63]) < RNG_RANGE[counter & 63])
+            ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter])
          );
     }
     else return counter + ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter]);
