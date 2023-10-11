@@ -136,7 +136,7 @@ void CounterHashTable<HashT, P>::display_counters()
         }
     }
     
-    std::cout << "fht," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
+    std::cout << "fht" << P << "," << CounterBase<HashT>::get_hash_name() << "," << SLOTS << "x" << LENGTH << "," << SIZE;
     for (std::size_t i = 0; i < ORDERED_SIZE; i++) std::cout << "," << counters[i].first << "," << LOG_INV[counters[i].second];
     
     std::cout << std::endl;
