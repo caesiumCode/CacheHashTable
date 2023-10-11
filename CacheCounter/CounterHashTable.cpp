@@ -112,7 +112,7 @@ void CounterHashTable<HashT, P>::display_trackers(double time)
 template<typename HashT, uint8_t P>
 void CounterHashTable<HashT, P>::display_counters()
 {
-    const std::size_t ORDERED_SIZE = 64;
+    const std::size_t ORDERED_SIZE = 256;
     std::array<std::pair<std::string, uint64_t>, ORDERED_SIZE> counters{std::make_pair("", 0)};
     
     for (std::size_t START = 0; START < SIZE; START += LENGTH)
