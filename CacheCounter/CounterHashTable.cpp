@@ -7,7 +7,7 @@ CounterHashTable<HashT, P>::CounterHashTable(uint8_t log2_slots, uint32_t length
 , SLOT_MASK(SLOTS - 1)
 , LOG_LENGTH(std::round(std::log2(length)))
 , LENGTH(1 << uint8_t(std::round(std::log2(length))))
-, RNG_STATE(0)
+, RNG_STATE(12345678)
 {
     m_table = new uint8_t[SIZE];
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
@@ -149,6 +149,7 @@ void CounterHashTable<HashT, P>::display_counters()
 }
 
 
+// splitmix64
 template<typename HashT, uint8_t P>
 uint64_t CounterHashTable<HashT, P>::rng()
 {
