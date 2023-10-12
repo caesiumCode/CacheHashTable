@@ -59,6 +59,7 @@ CounterHashTable<HashT, P>::CounterHashTable(uint8_t log2_slots, uint32_t length
     
     t_hit    = 0;
     t_search = 0;
+    gen.seed(rd());
 }
 
 template<typename HashT, uint8_t P>
@@ -163,6 +164,10 @@ uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
 {
     if constexpr(P == 4)
     {
+        uniform.param(dist_param_type(0., (std::sqrt(M_SQRT2) - 1.) * std::pow(std::sqrt(M_SQRT2), counter)));
+        
+        return counter + (uniform(gen) <= 1.);
+        
         return counter +
         (
             (counter <= 64  || rng() < RNG_CP_RANGE) &&
@@ -173,13 +178,24 @@ uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
     }
     else if constexpr(P == 2)
     {
+        uniform.param(dist_param_type(0., (M_SQRT2 - 1.) * std::pow(M_SQRT2, counter)));
+        
+        return counter + (uniform(gen) <= 1.);
+        
         return counter +
         (
             (counter <= 64 || rng() < RNG_CP_RANGE) &&
             ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter])
          );
     }
-    else return counter + ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter]);
+    else 
+    {
+        uniform.param(dist_param_type(0., std::pow(2, counter)));
+        
+        return counter + (uniform(gen) <= 1.);
+        
+        return counter + ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter]);
+    }
 }
 
 template<typename HashT, uint8_t P>

@@ -10,9 +10,12 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
+#include <random>
 
 #include "CounterBase.hpp"
 #include "CounterBase.cpp"
+
+using dist_param_type = std::uniform_real_distribution<double>::param_type;
 
 struct Range
 {
@@ -51,6 +54,10 @@ private:
     std::vector<uint64_t> RNG_RANGE;
     uint64_t RNG_CP_RANGE;
     uint64_t RNG_STATE;
+    
+    std::random_device rd;
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> uniform;
     
     uint8_t* m_table;
     
