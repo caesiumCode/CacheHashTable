@@ -162,9 +162,6 @@ uint64_t CounterHashTable<HashT, P>::rng()
 template<typename HashT, uint8_t P>
 uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
 {
-    uint64_t ONE_OVER_P = LOG_INV[counter+1] - LOG_INV[counter];
-    return counter + (ONE_OVER_P == 0 || rng() % ONE_OVER_P == 0);
-    
     if constexpr(P == 4)
     {
         return counter +
