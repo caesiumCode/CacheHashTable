@@ -110,6 +110,9 @@ void test_model(CounterBase<HashT>& cache, const std::string& path, const std::s
     }
     else
     {
+        std::size_t chunk = 65536;
+        if (filename == "scihub" || filename == "eclog" || filename == "accesslog") chunk = 4096;
+        
         std::size_t pos = 1;
         while (std::fgets(line_buffer, sizeof(line_buffer), fp))
         {
@@ -118,7 +121,7 @@ void test_model(CounterBase<HashT>& cache, const std::string& path, const std::s
             
             cache.increment(key);
             
-            if ((pos & (65536-1)) == 0)
+            if ((pos & (chunk-1)) == 0)
             {
                 std::cout << filename << "," << pos << ",";
                 cache.display_counters();
