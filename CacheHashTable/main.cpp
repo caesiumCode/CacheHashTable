@@ -27,7 +27,7 @@ int main(int argc, const char * argv[])
     std::string hash = std::string(argv[3]);
     
     if      (hash == "std")     select_model<std::hash<std::string>>(argv);
-    else if (hash == "xor")     select_model<XorHash<335946>>(argv);
+    else if (hash == "xor")     select_model<XorHash<21500544>>(argv);
     //else if (hash == "xor")   select_model<XorHash<73802>>(argv);
     //else if (hash == "xor")   select_model<XorHash<335946>>(argv);
     //else if (hash == "xor")   select_model<XorHash<21500544>>(argv);
