@@ -46,10 +46,11 @@ private:
     const uint8_t  LOG_LENGTH;
     HashT   m_hasher;
     
+    std::vector<uint64_t> U_MASK;
+    std::vector<uint64_t> W_MASK;
+    std::vector<uint64_t> W;
+    
     std::vector<uint64_t> LOG_INV;
-    std::vector<uint64_t> RNG_MASK;
-    std::vector<uint64_t> RNG_RANGE;
-    uint64_t RNG_CP_RANGE;
     uint64_t RNG_STATE;
     
     uint8_t* m_table;

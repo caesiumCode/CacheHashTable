@@ -121,10 +121,10 @@ void test_model(CounterBase<HashT>& cache, const std::string& path, const std::s
             
             cache.increment(key);
             
-            if ((pos & (chunk-1)) == 0)
+            if (true)
             {
-                std::cout << filename << "," << pos << ",";
-                cache.display_counters();
+                std::cout << filename << "," << pos << "," << key << std::endl;
+                cache.display();
             }
             pos++;
         }

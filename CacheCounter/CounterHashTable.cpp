@@ -12,50 +12,26 @@ CounterHashTable<HashT, P>::CounterHashTable(uint8_t log2_slots, uint32_t length
     m_table = new uint8_t[SIZE];
     for (std::size_t i = 0; i < SIZE; i++) m_table[i] = 0;
     
-    RNG_MASK.resize(256);
-    RNG_MASK[0]   = 0;
+    U_MASK.resize(5);
+    U_MASK[0] = 0;
+    for (std::size_t i = 1; i < 5; i++)
+    {
+        U_MASK[i] = U_MASK[i-1];
+        for (int j = 0; j < 16; j++) U_MASK[i] = 2 * U_MASK[i] + 1;
+    }
+    W_MASK.resize(64);
+    W_MASK[0] = 0;
     for (std::size_t i = 1; i < 64; i++)
     {
-        RNG_MASK[i]     = 2 * RNG_MASK[i-1] + 1;
-        RNG_MASK[i+64]  = RNG_MASK[i];
-        RNG_MASK[i+128] = RNG_MASK[i];
-        RNG_MASK[i+192] = RNG_MASK[i];
+        W_MASK[i] = 2 * W_MASK[i-1] + 1;
     }
     
-    const std::size_t LOG_RANGE = P * 64;
-    LOG_INV.resize(LOG_RANGE);
-    RNG_RANGE.resize(LOG_RANGE);
-    for (std::size_t i = 0; i < LOG_RANGE; i++)
-    {
-        if constexpr(P == 4)
-        {
-            if      (i <= 64)  RNG_RANGE[i] = std::ceil((M_SQRT2 + 1.) * (std::sqrt(M_SQRT2) + 1.) * std::pow(std::pow(2., .75), i));
-            else if (i <= 128) RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 64));
-            else if (i <= 192) RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 128));
-            else               RNG_RANGE[i] = std::ceil(std::pow(std::pow(2., .75), i - 192));
-            LOG_INV[i] = std::ceil(std::pow(std::sqrt(M_SQRT2), i));
-        }
-        else if constexpr(P == 2)
-        {
-            if (i <= 64) RNG_RANGE[i] = std::ceil((M_SQRT2 + 1.) * std::pow(M_SQRT2, i));
-            else         RNG_RANGE[i] = std::ceil(std::pow(M_SQRT2, i - 64));
-            LOG_INV[i] = std::ceil(std::pow(M_SQRT2, i));
-        }
-        else
-        {
-            RNG_RANGE[i] = 1;
-            LOG_INV[i]   = 1 << i;
-        }
-    }
+    W.resize(64);
+    for (std::size_t i = 0; i < 64; i++) W[i] = std::round(std::pow(2, (double)(P-1)/P * i));
     
-    if constexpr(P == 2)
-    {
-        RNG_CP_RANGE = std::ceil((M_SQRT2 + 1.) * 4294967296.);
-    }
-    else if constexpr(P == 4)
-    {
-        RNG_CP_RANGE = std::ceil((M_SQRT2 + 1.) * (std::sqrt(M_SQRT2) + 1.) * 281474976710656.);
-    }
+    LOG_INV.resize(256);
+    double a = std::pow(2, P);
+    for (std::size_t i = 0; i < 64; i++) LOG_INV[i] = std::round((std::pow(a, i) - 1)/(a-1));
     
     t_hit    = 0;
     t_search = 0;
@@ -75,19 +51,20 @@ void CounterHashTable<HashT, P>::display()
         std::cout << "[SLOT" << std::setw(3) << slot << "]";
         
         bool is_char = false;
-        std::size_t d = 0;
+        int d = 0;
         for (std::size_t i = slot * LENGTH; i < (slot+1) * LENGTH; i++)
         {
             if (d == 0) is_char = false;
             
             if (is_char)
             {
-                std::cout << std::setw(4) << reinterpret_cast<char&>(m_table[i]);
+                if (d > 1)  std::cout << std::setw(4) << reinterpret_cast<char&>(m_table[i]);
+                else        std::cout << std::setw(4) << int(m_table[i]);
                 d--;
             }
             else std::cout << std::setw(4) << int(m_table[i]);
             
-            if (!is_char) d += m_table[i];
+            if (!is_char) d += m_table[i]+1;
             if (m_table[i] < 255) is_char = true;
         }
         
@@ -166,21 +143,27 @@ uint8_t CounterHashTable<HashT, P>::log_increment(uint8_t counter)
     {
         return counter +
         (
-            (counter <= 64  || rng() < RNG_CP_RANGE) &&
-            (counter <= 128 || (rng() & 65535) == 0) &&
-            (counter <= 192 || (rng() & 65535) == 0) &&
-            ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter])
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & W_MASK[counter & 63]) <= W[counter & 63])
          );
     }
     else if constexpr(P == 2)
     {
         return counter +
         (
-            (counter <= 64 || rng() < RNG_CP_RANGE) &&
-            ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter])
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & W_MASK[counter & 63]) <= W[counter & 63])
          );
     }
-    else return counter + ((rng() & RNG_MASK[counter]) < RNG_RANGE[counter]);
+    else return counter +
+        (
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & U_MASK[counter >> 6]) == 0) &&
+            ((rng() & W_MASK[counter & 63]) <= W[counter & 63])
+         );
 }
 
 template<typename HashT, uint8_t P>
